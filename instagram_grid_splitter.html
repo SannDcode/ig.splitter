@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Instagram Grid Splitter - Isan</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.22.1/sweetalert2.all.min.js" integrity="sha512-Bf0VYmMdTl80uiiSoHlWSDYtsOIeDnobVy86zAaLVfvRoUQv3uwLar8X8FSNFBT93XwPTq9DDekLl/SHaOHIsw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.22.1/sweetalert2.min.css" integrity="sha512-bkb9OVJFbnXaSi8PvT9arbq1WSE9QCDkLse1RqPlhnRqmH16CgmL9HAd0W99NYfVIp66gZb4k+L1jOr+JuT8Og==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f7f5ed;
+      margin: 0;
+      padding: 2em;
+      color: #0082a6;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    input, select, button {
+      margin: 0.5em;
+      padding: 0.6em 1em;
+      font-size: 1em;
+      border: 1px solid #c4dee3;
+      border-radius: 5px;
+      background-color: #ffffff;
+      color: #0082a6;
+    }
+    button {
+      background-color: #0082a6;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #00749a;
+    }
+    #preview {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 2em;
+    }
+    .grid-piece {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .piece {
+      border: 2px solid #c4dee3;
+      width: 200px;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+    }
+    .download-btn {
+      display: inline-block;
+      margin-top: 8px;
+      margin-bottom: 30px;
+      text-decoration: none;
+      color: white;
+      background: #86b9c7;
+      padding: 6px 12px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Instagram Grid Splitter - Isan :V</h1>
+  <input type="file" id="imgInput" accept="image/*">
+  <select id="gridSelect">
+    <option value="1x3">3x1</option>
+    <option value="2x3">3x2</option>
+    <option value="3x3">3x3</option>
+    <option value="3x4">3x4</option>
+    <option value="3x5">3x5</option>
+    <option value="3x6">3x6</option>
+  </select>
+  <button onclick="splitImage()">Split & Download</button>
+  <div id="preview"></div>
+
+  <script src="sweetalert2.all.min.js"></script>
+  <script>
+    Swal.fire({
+  title: "<strong>Hosted by isan</strong>",
+  icon: "info",
+  html: `
+    Kalo ada yang error atau mau ditanyain chat wa aja ya!
+  `,
+  showCloseButton: true,
+  showCancelButton: false,
+  focusConfirm: false,
+  confirmButtonText: `
+    Oke aman aja 👍🏼
+  `,
+  confirmButtonAriaLabel: "Thumbs up, great!",
+});
+
+
+    let image;
+
+    document.getElementById("imgInput").addEventListener("change", function (e) {
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        image = new Image();
+        image.src = event.target.result;
+        image.onload = function () {
+          alert("Gambar berhasil dimuat!");
+        };
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    });
+
+    function splitImage() {
+      const gridValue = document.getElementById("gridSelect").value;
+      const [rows, cols] = gridValue.split("x").map(Number);
+
+      const pieceWidth = 1080;
+      const pieceHeight = 1350;
+      const totalWidth = pieceWidth * cols;
+      const totalHeight = pieceHeight * rows;
+
+      // Resize image if needed to fit crop area
+      const scale = Math.max(totalWidth / image.width, totalHeight / image.height);
+      const newWidth = image.width * scale;
+      const newHeight = image.height * scale;
+
+      const resizedCanvas = document.createElement("canvas");
+      resizedCanvas.width = newWidth;
+      resizedCanvas.height = newHeight;
+      const rctx = resizedCanvas.getContext("2d");
+      rctx.drawImage(image, 0, 0, newWidth, newHeight);
+
+      const sx = (newWidth - totalWidth) / 2;
+      const sy = (newHeight - totalHeight) / 2;
+
+      const preview = document.getElementById("preview");
+      preview.innerHTML = "";
+      let counter = 1;
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const canvas = document.createElement("canvas");
+          canvas.width = pieceWidth;
+          canvas.height = pieceHeight;
+          const ctx = canvas.getContext("2d");
+
+          ctx.drawImage(
+            resizedCanvas,
+            sx + x * pieceWidth,
+            sy + y * pieceHeight,
+            pieceWidth,
+            pieceHeight,
+            0,
+            0,
+            pieceWidth,
+            pieceHeight
+          );
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "grid-piece";
+
+          const img = document.createElement("img");
+          img.src = canvas.toDataURL("image/jpeg", 1.0);
+          img.className = "piece";
+
+          const link = document.createElement("a");
+          link.href = canvas.toDataURL("image/jpeg", 1.0);
+          link.download = `grid_${counter}.jpg`;
+          link.className = "download-btn";
+          link.textContent = `Download #${counter}`;
+
+          wrapper.appendChild(img);
+          wrapper.appendChild(link);
+          preview.appendChild(wrapper);
+          counter++;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
