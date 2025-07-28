@@ -25,6 +25,7 @@
       border-radius: 5px;
       background-color: #ffffff;
       color: #0082a6;
+      field-sizing: content;
     }
     button {
       background-color: #0082a6;
@@ -33,6 +34,9 @@
     }
     button:hover {
       background-color: #00749a;
+    }
+    select:hover {
+      background-color: #005d7533;
     }
     #preview {
       display: flex;
@@ -55,19 +59,61 @@
     }
     .download-btn {
       display: inline-block;
-      margin-top: 8px;
-      margin-bottom: 30px;
       text-decoration: none;
       color: white;
       background: #86b9c7;
       padding: 6px 12px;
       border-radius: 5px;
     }
+    .custom-file-btn {
+      display: inline-block;
+      padding: 10px 16px;
+      background-color: #0082a6;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.3s ease;
+    }
+    .custom-file-btn:hover {
+      background-color: #00749a;
+    }
+    .drop-zone {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px dashed #0082a6;
+      border-radius: 10px;
+      padding: 40px;
+      color: #0082a6;
+      font-size: 1.2em;
+      background-color: #f0fafa;
+      transition: background-color 0.3s;
+      width: max-content;
+      gap: 1em;
+    }
+    .drop-zone.dragover {
+      background-color: #d0ecf3;
+      border-color: #005d75;
+    }
+    .var1 {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
   </style>
 </head>
 <body>
   <h1>Instagram Grid Splitter - Isan :V</h1>
-  <input type="file" id="imgInput" accept="image/*">
+  <div class="var1">
+    <input hidden type="file" id="imgInput" accept="image/*">
+    <div id="dropZone" class="drop-zone">
+      <label for="imgInput" class="custom-file-btn">📁 Pilih Gambar</label>
+    📂✊🏼 Drag & Drop Gambar ke sini<br>atau klik tombol di kiri👈🏼
+    </div>
+    <span id="fileName" style="font-size: 0.9em; background-color: #9ce0f155; padding: 5px; border-radius: 5px;"></span>
+  </div>
   <select id="gridSelect">
     <option value="1x3">3x1</option>
     <option value="2x3">3x2</option>
@@ -75,7 +121,22 @@
     <option value="3x4">3x4</option>
     <option value="3x5">3x5</option>
     <option value="3x6">3x6</option>
+    <option value="4x1">4x1</option>
+    <option value="4x2">4x2</option>
+    <option value="4x3">4x3</option>
+    <option value="4x4">4x4</option>
+    <option value="4x5">4x5</option>
+    <option value="4x6">4x6</option>
   </select>
+  <div style="margin-top: 1em;">
+    <label>
+    Custom Total Size (optional):
+    <input type="number" id="customWidth" placeholder="Total Width" style="field-sizing: content;">
+    x
+    <input type="number" id="customHeight" placeholder="Total Height" style="field-sizing: content;">
+    (px)
+    </label>
+  </div>
   <button onclick="splitImage()">Split & Download</button>
   <div id="preview"></div>
 
@@ -97,6 +158,37 @@
 });
 
 
+const dropZone = document.getElementById("dropZone");
+const imgInput = document.getElementById("imgInput");
+
+// Event: Drag Over
+dropZone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropZone.classList.add("dragover");
+});
+
+// Event: Drag Leave
+dropZone.addEventListener("dragleave", () => {
+  dropZone.classList.remove("dragover");
+});
+
+// Event: Drop
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropZone.classList.remove("dragover");
+
+  const files = e.dataTransfer.files;
+  if (files.length > 0 && files[0].type.startsWith("image/")) {
+    imgInput.files = files;
+
+    // Trigger onchange agar gambar terbaca
+    const event = new Event("change", { bubbles: true });
+    imgInput.dispatchEvent(event);
+  } else {
+    Swal.fire("Oops!", "File bukan gambar!", "error");
+  }
+});
+
     let image;
 
     document.getElementById("imgInput").addEventListener("change", function (e) {
@@ -110,15 +202,25 @@
       };
       reader.readAsDataURL(e.target.files[0]);
     });
+    document.getElementById("imgInput").addEventListener("change", function () {
+    const fileName = this.files[0]?.name || "Belum ada file";
+    document.getElementById("fileName").textContent = fileName;
+  });
 
     function splitImage() {
       const gridValue = document.getElementById("gridSelect").value;
-      const [rows, cols] = gridValue.split("x").map(Number);
+      const [cols, rows] = gridValue.split("x").map(Number); // dibalik: cols dulu, baru rows
 
-      const pieceWidth = 1080;
-      const pieceHeight = 1350;
+      const customW = parseInt(document.getElementById("customWidth").value);
+      const customH = parseInt(document.getElementById("customHeight").value);
+
+      // Jika pengguna isi ukuran custom total, hitung ukuran tiap potong
+      const pieceWidth = !isNaN(customW) ? Math.floor(customW / cols) : 1080;
+      const pieceHeight = !isNaN(customH) ? Math.floor(customH / rows) : 1350;
+
       const totalWidth = pieceWidth * cols;
       const totalHeight = pieceHeight * rows;
+
 
       // Resize image if needed to fit crop area
       const scale = Math.max(totalWidth / image.width, totalHeight / image.height);
