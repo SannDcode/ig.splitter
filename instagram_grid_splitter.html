@@ -114,13 +114,14 @@
     </div>
     <span id="fileName" style="font-size: 0.9em; background-color: #9ce0f155; padding: 5px; border-radius: 5px;"></span>
   </div>
-  <select id="gridSelect">
+  <label for="gridSelect">Grid Size:</label>
+  <select id="gridSelect" onchange="syncInput(this.value)">
     <option value="1x3">3x1</option>
     <option value="2x3">3x2</option>
     <option value="3x3">3x3</option>
     <option value="3x4">3x4</option>
     <option value="3x5">3x5</option>
-    <option value="3x6">3x6</option>
+    <option value="3x6" selected>3x6</option>
     <option value="4x1">4x1</option>
     <option value="4x2">4x2</option>
     <option value="4x3">4x3</option>
@@ -128,6 +129,7 @@
     <option value="4x5">4x5</option>
     <option value="4x6">4x6</option>
   </select>
+  <input type="text" id="custom-grid-size" placeholder="Custom (e.g. 3x12)" oninput="syncSelect(this.value)">
   <div style="margin-top: 1em;">
     <label>
     Custom Total Size (optional):
@@ -207,8 +209,20 @@ dropZone.addEventListener("drop", (e) => {
     document.getElementById("fileName").textContent = fileName;
   });
 
+
     function splitImage() {
-      const gridValue = document.getElementById("gridSelect").value;
+    let gridValue = document.getElementById("custom-grid-size").value.trim();
+
+    // Validasi format jika input custom diisi
+    if (gridValue && !/^\d+x\d+$/i.test(gridValue)) {
+      Swal.fire("Format salah", "Gunakan format seperti 3x6 atau 4x9", "error");
+      return;
+    }
+
+    // fallback ke dropdown jika kosong
+    if (!gridValue) {
+      gridValue = document.getElementById("gridSelect").value;
+    }
       const [cols, rows] = gridValue.split("x").map(Number); // dibalik: cols dulu, baru rows
 
       const customW = parseInt(document.getElementById("customWidth").value);
@@ -279,6 +293,28 @@ dropZone.addEventListener("drop", (e) => {
         }
       }
     }
+
+// custom
+    function syncInput(value) {
+    document.getElementById('custom-grid-size').value = value;
+  }
+
+  function syncSelect(value) {
+    const select = document.getElementById('gridSelect');
+    let matched = false;
+
+    for (let option of select.options) {
+      if (option.value === value) {
+        select.value = value;
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      select.value = ""; // Tidak cocok dengan opsi dropdown
+    }
+  }
   </script>
 </body>
 </html>
